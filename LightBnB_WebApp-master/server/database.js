@@ -77,7 +77,7 @@ exports.getAllReservations = getAllReservations;
 const getAllProperties = function(options, limit = 10) {
   
   return pool.query(`
-  SELECT properties.*, avg(property_reviews.rating) as average_ratings
+  SELECT properties.*, avg(property_reviews.rating) as average_rating
   FROM properties
   JOIN property_reviews ON properties.id = property_id
   GROUP BY properties.id
