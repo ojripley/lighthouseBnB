@@ -76,13 +76,15 @@ exports.getAllReservations = getAllReservations;
  */
 const getAllProperties = function(options, limit = 10) {
   
-  pool.query(`
-  SELECT *
+  return pool.query(`
+  SELECT properties.*, avg(property_reviews.rating) as average_ratings
   FROM properties
+  JOIN property_reviews ON properties.id = property_id
+  GROUP BY properties.id
   LIMIT $1
   `, [limit])
     .then(res => {
-      console.log(res.rows);
+      return res.rows;
     })
     .catch(error => {
       console.log(`query error ${error.stack}`);
@@ -91,13 +93,16 @@ const getAllProperties = function(options, limit = 10) {
   
   
   
-  
+  // for json
+
   // const limitedProperties = {};
   // for (let i = 1; i <= limit; i++) {
   //   limitedProperties[i] = properties[i];
   // }
   // return Promise.resolve(limitedProperties);
-}
+};
+
+
 exports.getAllProperties = getAllProperties;
 
 
