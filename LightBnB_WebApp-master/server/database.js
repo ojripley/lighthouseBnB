@@ -78,22 +78,8 @@ const addUser =  function(user) {
     .catch(error => {
       console.log(`query error: ${error.stack}`);
     });
-  
-  // const userId = Object.keys(users).length + 1;
-  // user.id = userId;
-  // users[userId] = user;
-  // return Promise.resolve(user);
 };
 exports.addUser = addUser;
-
-
-
-
-
-
-
-
-
 
 
 
@@ -130,25 +116,6 @@ exports.getAllReservations = getAllReservations;
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /// Properties
 
 /**
@@ -159,13 +126,47 @@ exports.getAllReservations = getAllReservations;
  */
 const getAllProperties = function(options, limit = 10) {
   
-  return pool.query(`
-  SELECT properties.*, avg(property_reviews.rating) as average_rating
+  const queryVars = [];
+
+  let queryString = `SELECT properties.*, avg(property_reviews.rating) as average_rating
   FROM properties
-  JOIN property_reviews ON properties.id = property_id
-  GROUP BY properties.id
-  LIMIT $1
-  `, [limit])
+  JOIN property_reviews ON properties.id = property_id `;
+
+  if (options.city) {
+    queryVars.push(`%${options.city}%`);
+    queryString += `WHERE city LIKE $${queryVars.length} `;
+  }
+
+  if (options.owner_id) {
+    queryVars.push(`${options.owner_id}`);
+    queryString += `WHERE owner_id LIKE $${queryVars.length} `;
+  }
+
+  if (options.minimum_price_per_night) {
+    queryVars.push(`${options.minimum_price_per_night * 100}`);
+    queryString += `AND cost_per_night >= $${queryVars.length} `;
+  }
+
+  if (options.maximum_price_per_night) {
+    queryVars.push(`${options.maximum_price_per_night * 100}`);
+    queryString += `AND cost_per_night <= $${queryVars.length} `;
+  }
+
+  queryString += `
+  GROUP BY properties.id `;
+
+  if (options.minimum_rating) {
+    queryVars.push(`${options.minimum_rating}`);
+    queryString += `HAVING avg(property_reviews.rating) >= $${queryVars.length} `;
+  }
+
+  queryVars.push(limit);
+  queryString += `
+  ORDER BY cost_per_night
+  LIMIT $${queryVars.length};
+  `;
+
+  return pool.query(queryString, queryVars)
     .then(res => {
       return res.rows;
     })
